@@ -1,0 +1,96 @@
+<html>
+	<head>
+		<title>Isosfera</title>
+		<style>
+
+		body {
+			font-family: Monospace;
+			background-color: #f0f0f0;
+			margin: 0px;
+			overflow: hidden;
+		}
+
+		canvas {
+			width: 100%;
+			height: 100%;
+		}
+
+	</style>
+		<script src="libs/three.js"></script>
+        <script src="libs/stats.min.js"></script>
+        <script src="libs/Coordinates.js"></script>
+        <script src="libs/OrbitControls.js"></script>
+        <script src="libs/amsci.isosphere.js"></script>
+	</head>
+	<body>
+		<script>
+
+			var scene, camera, renderer, octahedron;
+
+			var geometry = BufferIsoSphereGeometry(1,4);
+			//console.log(geometry);
+
+			var w_material = new THREE.MeshBasicMaterial({
+                color: 0xff0000,
+                wireframe: true 
+			});
+			
+			var l_material = new THREE.MeshPhongMaterial( {color: 0xff0000} );
+
+
+			function Start() {
+			scene = new THREE.Scene();
+			camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+			renderer = new THREE.WebGLRenderer({ antialias: true });
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.setClearColor( 0xf0f0f0 );
+			document.body.appendChild( renderer.domElement );
+            camera.position.set(1.8,2,2.3);
+			camera.lookAt( new THREE.Vector3(0,0,0));
+            controls = new THREE.OrbitControls( camera );
+
+			sphere = new THREE.Mesh(geometry, l_material);
+			for(var i = 0; i < sphere.geometry.attributes.position.count; i++) {
+				var factor = Math.random()/5+1;
+				sphere.geometry.attributes.position.array[3*i] *= factor;
+				sphere.geometry.attributes.position.array[3*i+1] *= factor;
+				sphere.geometry.attributes.position.array[3*i+2] *= factor;
+			}
+			sphere.geometry.computeVertexNormals();
+
+			// point = new THREE.Mesh(new THREE.SphereGeometry(.05,16,16), l_material);
+			// point.position.set(
+			// 	sphere.geometry.attributes.position.array[0],
+			// 	sphere.geometry.attributes.position.array[1],
+			// 	sphere.geometry.attributes.position.array[2]
+			// );
+			// scene.add(point);
+		    scene.add(sphere);
+
+			stats = new Stats();
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.top = '0px';
+			document.body.appendChild( stats.domElement );
+
+			hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, .6 );
+                hemiLight.position.set( 0, 500, 0 );
+                scene.add( hemiLight );
+                dirLight = new THREE.DirectionalLight( 0xffffff,.5 );
+                dirLight.position.set(-10,70,40);
+                scene.add( dirLight , dirLight.target);
+
+			}
+		
+
+			function Update() {
+				//sphere.geometry.attributes.position.array[0] -= 1;
+				requestAnimationFrame(Update);
+				stats.update();
+				renderer.render(scene, camera);
+			}
+
+			Start();
+			Update();
+		</script>
+	</body>
+</html>

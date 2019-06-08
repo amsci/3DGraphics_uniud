@@ -1,0 +1,138 @@
+<html>
+	<head>
+		<title>Sferificazione di un icosaedro</title>
+		<style>
+
+		body {
+			font-family: Monospace;
+			background-color: #f0f0f0;
+			margin: 0px;
+			overflow: hidden;
+		}
+
+		canvas {
+			width: 100%;
+			height: 100%;
+		}
+
+	</style>
+		<script src="libs/three.js"></script>
+        <script src="libs/stats.min.js"></script>
+        <script src="libs/Coordinates.js"></script>
+		<script src="libs/OrbitControls.js"></script>
+	</head>
+	<body>
+        Premi Spazio per sferificare il poliedro<br>
+        Usa il mouse per ruotare e ingrandire
+		<script>
+
+			var scene, camera, renderer, octahedron;
+
+            var geometry = new THREE.Geometry();
+    
+    var t = ( 1 + Math.sqrt( 5 ) ) / 2;
+
+    var vertices = [
+		- 1, t, 0, 	    1, t, 0, 	- 1, - t, 0, 	1, - t, 0,
+		 0, - 1, t, 	0, 1, t,	0, - 1, - t, 	0, 1, - t,
+		 t, 0, - 1, 	t, 0, 1, 	- t, 0, - 1, 	- t, 0, 1
+	];
+
+	var faces = [
+		 0, 11, 5, 	0, 5, 1, 	0, 1, 7, 	0, 7, 10, 	0, 10, 11,
+		 1, 5, 9, 	5, 11, 4,	11, 10, 2,	10, 7, 6,	7, 1, 8,
+		 3, 9, 4, 	3, 4, 2,	3, 2, 6,	3, 6, 8,	3, 8, 9,
+		 4, 9, 5, 	2, 4, 11,	6, 2, 10,	8, 6, 7,	9, 8, 1
+	];
+
+    var factor = 1/Math.sqrt(1+Math.pow(t,2));
+            
+    for(i=0; i<12; i++){
+        //geometry.vertices.push(new THREE.Vector3(vertices.slice(i,i+3)));
+        geometry.vertices.push(new THREE.Vector3(vertices[3*i], vertices[3*i+1], vertices[3*i+2]).multiplyScalar(factor));
+    }
+
+    for(i=0; i<20; i++){
+        geometry.faces.push(new THREE.Face3(faces.slice(3*i,3*i+3)));
+        //geometry.faces.push(new THREE.Face3(faces[3*i], faces[3*i+1], faces[3*i+2]));
+    }
+
+			var material = new THREE.MeshBasicMaterial({
+                color: 0xff0000,
+                wireframe: true 
+            });
+
+
+            //Spiegazione di Subdivide()
+            //ripeti questo ciclo per geometry.faces.length volte
+            //     considera i tre vertici a,b,c della prima faccia
+            //     calcola i punti AB,BC,CA sommando rispett. a e b, b e c, c e a
+            //     e aggiungili alla lista dei vertici
+            //     indica con ab, bc, ca i loro indici in tale lista
+            //     elimina la prima faccia dalla lista delle facce
+            //     e aggiungici le 4 facce che si ottengono con i vertici a,b,c,ab,bc,ca
+            function Subdivide(){
+                num_faces = geometry.faces.length;
+                for(i=0; i<num_faces; i++){
+                    a = geometry.faces[0].a;
+                    b = geometry.faces[0].b;
+                    c = geometry.faces[0].c;
+                    AB = geometry.vertices[a].clone().add(geometry.vertices[b]).normalize();
+                    BC = geometry.vertices[b].clone().add(geometry.vertices[c]).normalize();
+                    CA = geometry.vertices[c].clone().add(geometry.vertices[a]).normalize();
+                    geometry.vertices.push(AB,BC,CA);
+                    ab = geometry.vertices.length-3;
+                    bc = ab+1;
+                    ca = ab+2;
+                    geometry.faces.splice(0,1); //cancella la prima faccia in geometry.faces
+                    geometry.faces.push(
+                        new THREE.Face3(a, ab, ca),
+                        new THREE.Face3(ab,b, bc),
+                        new THREE.Face3(c,ca,bc),
+                        new THREE.Face3(ab,bc,ca)
+                    );
+                }
+            }
+
+			function Start() {
+			scene = new THREE.Scene();
+			camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+			renderer = new THREE.WebGLRenderer({ antialias: true });
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.setClearColor( 0xf0f0f0 );
+			document.body.appendChild( renderer.domElement );
+            camera.position.set(1.8,2,2.3);
+			camera.lookAt( new THREE.Vector3(0,0,0));
+            controls = new THREE.OrbitControls( camera );
+
+            octahedron = new THREE.Mesh(geometry, material);
+		    scene.add(octahedron);
+
+			stats = new Stats();
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.top = '100px';
+			document.body.appendChild( stats.domElement );
+		    }
+            
+            // Applica Subdivide() quando viene premuto Barra spaziatrice
+            document.addEventListener('keydown', ReadInput); 
+            function ReadInput(input){
+                if(input.key == " "){
+                    Subdivide();
+                    scene.remove(octahedron);
+                    octahedron = new THREE.Mesh(geometry.clone(), material);
+			        scene.add(octahedron);
+                }
+            }
+
+			function Update() {
+				requestAnimationFrame(Update);
+				stats.update();
+				renderer.render(scene, camera);
+			}
+
+			Start();
+			Update();
+		</script>
+	</body>
+</html>

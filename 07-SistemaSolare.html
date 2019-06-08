@@ -1,0 +1,134 @@
+<html>
+	<head>
+		<title>Sistema solare</title>
+		<style>
+
+		body {
+			font-family: Monospace;
+			background-color: #000000;
+			margin: 0px;
+			overflow: hidden;
+		}
+
+		canvas {
+            padding: 0;
+            margin: auto;
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+
+	</style>
+		<script src="libs/three.js"></script>
+        <script src="libs/stats.min.js"></script>
+        <script src="libs/Coordinates.js"></script>
+		<script src="libs/OrbitControls.js"></script>
+	</head>
+	<body>
+		<script>
+
+            var scene, camera, renderer;
+            var aspectRatio = 16/9; 
+            
+            var sfera_geo = new THREE.SphereGeometry(1,9,10);
+            var mat = new THREE.MeshBasicMaterial({wireframe: true});
+
+            var sole = new THREE.Mesh( sfera_geo, mat );
+            sole.material.color.set(new THREE.Color("hsl(50, 100%, 60%)"));
+
+            var terra = new THREE.Mesh( sfera_geo, mat.clone() );
+            terra.material.color.set(new THREE.Color("hsl(206, 100%, 41%)"));
+
+            var luna = new THREE.Mesh( sfera_geo, mat.clone() );
+            luna.material.color.set(new THREE.Color("hsl(43, 38%, 28%)"));
+
+            var centro_terra = new THREE.Object3D();
+            var centro_luna = new THREE.Object3D();
+            // la terra e il centro della luna si muovono rispetto al centro della terra
+            centro_terra.add(centro_luna,terra);
+            // la luna si muove rispetto al suo centro
+            centro_luna.add(luna);
+            
+
+			function Start() {
+            scene = new THREE.Scene();
+            
+			camera = new THREE.PerspectiveCamera( 75, aspectRatio, 0.1, 1000 );
+			renderer = new THREE.WebGLRenderer({antialias: true});
+            if((width = window.innerHeight*aspectRatio)<=window.innerWidth){
+                renderer.setSize( width, window.innerHeight);
+            } else renderer.setSize(window.innerWidth,window.innerWidth/aspectRatio);
+			renderer.setClearColor( 0xf0f0f0 );
+			document.body.appendChild( renderer.domElement );
+            camera.position.set(0,3,3);
+            controls = new THREE.OrbitControls( camera );
+
+		    scene.add(sole, centro_terra);
+
+			stats = new Stats();
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.top = '50px';
+			document.body.appendChild( stats.domElement );
+		    }
+
+
+            var inizio = Date.now();
+            var matrice = new THREE.Matrix4();
+            var verticale = new THREE.Vector3(0,1,0);
+            var orizzontale = new THREE.Vector3(1,0,0);
+
+            var anno_terra = 365000;
+            var anno_luna = anno_terra/12;
+            var giorno_terra = 1000;
+            var giorno_luna = anno_luna;
+
+			function Update() {
+                tempo = (Date.now()-inizio) % anno_terra;
+
+                centro_terra.matrix //rotazione del centro della terra attorno al sole
+                    .makeRotationAxis(verticale, tempo*2*Math.PI/anno_terra)
+                    .multiply(matrice.makeTranslation(3,0,0));
+                centro_terra.matrixAutoUpdate = false;
+
+                centro_luna.matrix //rotazione del centro della luna attorno al centro della terra
+                    .makeRotationAxis(verticale, 12*tempo*2*Math.PI/anno_luna)
+                    .multiply(matrice.makeTranslation(1,0,0));
+                centro_luna.matrixAutoUpdate = false;
+
+                terra.matrix //rotazione della terra
+                    .makeRotationAxis(orizzontale, 25*Math.PI/180)//l'asse viene inclinato
+                    .multiply(matrice.makeRotationAxis(verticale, tempo*(2*Math.PI/giorno_terra - 2*Math.PI/anno_terra)))
+                    // la terra ruota attorno al suo asse, con velocità angolare 2*Math.PI/giorno_terra - 2*Math.PI/anno_terra,
+                    // dato che la rotazione del centro dava già un contributo di 2*Math.PI/anno_terra alla velocità angolare
+                    // della terra rispetto al sole
+                    .multiply(matrice.makeScale(.5,.5,.5)); // la terra è portata alla sua dimensione
+                terra.matrixAutoUpdate = false;
+
+                luna.matrix //rotazione della luna
+                    .makeRotationAxis(verticale, tempo*(2*Math.PI/giorno_luna - 2*Math.PI/anno_luna)) 
+                    // quando giorno_luna=anno_luna (in caso di tidal lock) questo è inutile
+                    .multiply(matrice.makeScale(.3,.3,.3)); // la luna è portata alla sua dimensione
+                luna.matrixAutoUpdate = false;
+
+				requestAnimationFrame(Update);
+				stats.update();
+				renderer.render(scene, camera);
+            }
+            
+            window.addEventListener('resize', onWindowResize, false); //riscala contenuto
+            function onWindowResize(){
+                if((width = window.innerHeight*aspectRatio)<=window.innerWidth){
+                    renderer.setSize( width, window.innerHeight);
+                } else renderer.setSize(window.innerWidth,window.innerWidth/aspectRatio);
+            }
+
+			Start();
+			Update();
+		</script>
+	</body>
+</html>

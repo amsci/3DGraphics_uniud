@@ -1,0 +1,96 @@
+<html>
+	<head>
+		<title>Fiore</title>
+		<style>
+
+		body {
+			font-family: Monospace;
+			background-color: #f0f0f0;
+			margin: 0px;
+			overflow: hidden;
+		}
+
+		canvas {
+			width: 100%;
+			height: 100%;
+		}
+
+	</style>
+		<script src="libs/three.js"></script>
+        <script src="libs/stats.min.js"></script>
+        <script src="libs/Coordinates.js"></script>
+		<script src="libs/OrbitControls.js"></script>
+	</head>
+	<body>
+        Usa il mouse per ruotare e ingrandire
+		<script>
+
+			var scene, camera, renderer;
+
+            var cylinder_height = 1.5;
+            var cylinder_radius = .07;
+            var cylinder_geo = new THREE.CylinderGeometry(cylinder_radius,cylinder_radius,cylinder_height,32);
+            var cylinder_mat = new THREE.MeshPhongMaterial( {color: 0x05aa00} );
+            var cylinder = new THREE.Mesh( cylinder_geo, cylinder_mat );
+
+            var petals_number = 18;
+            var cone_height = 1;
+            var cone_radius = Math.tan(Math.PI/petals_number)*cone_height;
+            var cone_geo = new THREE.CylinderGeometry( 0, cone_radius, cone_height, 32 );
+            var cone_mat = new THREE.MeshPhongMaterial( {color: 0xff5000} );
+            var cone = new THREE.Mesh( cone_geo, cone_mat );
+
+            var sphere_radius = .15;
+            var sphere_geo = new THREE.SphereGeometry( sphere_radius, 32 ,32);
+            var sphere_mat = new THREE.MeshPhongMaterial( {color: 0x301000} );
+            var sphere = new THREE.Mesh( sphere_geo, sphere_mat );
+
+			function Start() {
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+                renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize( window.innerWidth, window.innerHeight );
+                renderer.setClearColor( 0xf0f0f0 );
+                document.body.appendChild( renderer.domElement );
+                camera.position.set(2,2,2);
+                camera.lookAt( new THREE.Vector3(0,0,0));
+                controls = new THREE.OrbitControls( camera );
+
+                cylinder.position.y -= cylinder_height/2;
+                var pivot = new THREE.Object3D();
+                var petals = new THREE.Object3D();
+                cone.position.y -= cone_height/2;
+                for(i=0; i<petals_number; i++){ //clonazione dei petali
+                    var newcone = cone.clone();
+                    var newpivot = pivot.clone();
+                    newpivot.add(newcone);
+                    newpivot.rotation.x = i*2*Math.PI/petals_number;
+                    petals.add(newpivot);
+                }
+                petals.rotation.z = Math.PI / 2;
+                scene.add(petals, sphere, cylinder);
+
+                stats = new Stats();
+                stats.domElement.style.position = 'absolute';
+                stats.domElement.style.top = '100px';
+                document.body.appendChild( stats.domElement );
+
+                hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, .7 );
+                hemiLight.position.set( 0, 500, 0 );
+                scene.add( hemiLight );
+                dirLight = new THREE.DirectionalLight( 0xffffff,.5 );
+                dirLight.position.set(-10,70,40);
+                scene.add( dirLight , dirLight.target);
+		    }
+
+			function Update() {
+				requestAnimationFrame(Update);
+				stats.update();
+				renderer.render(scene, camera);
+			}
+
+			Start();
+			Update();
+		</script>
+	</body>
+</html>
