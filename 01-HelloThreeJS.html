@@ -1,0 +1,55 @@
+<html>
+	<head>
+		<title>Hello Three.js</title>
+		<style>
+		body {
+			font-family: Monospace;
+			background-color: #f0f0f0;
+			margin: 0px;
+			overflow: hidden;
+		}
+		canvas {
+			width: 100%;
+			height: 100%;
+		}
+	</style>
+		<script src="libs/three.js"></script>
+		<script src="libs/stats.min.js"></script>
+	</head>
+	<body>
+		<script>
+			var scene, renderer, camera, stats, cube;
+			function Start() {
+				scene = new THREE.Scene();
+				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+				renderer = new THREE.WebGLRenderer();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				document.body.appendChild( renderer.domElement );
+				var geometry = new THREE.BoxGeometry(1,1,1);
+				var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+				box = new THREE.Mesh( geometry, material );
+				scene.add( box );
+
+				var geometry2 = new THREE.Geometry();
+				geometry2.vertices.push( new THREE.Vector3(2,0,0), new THREE.Vector3(4,0,0), new THREE.Vector3(2,2,0));
+				geometry2.faces.push( new THREE.Face3(0,1,2));
+				var material2 = new THREE.MeshBasicMaterial( { color:0xff0000, side: THREE.FrontSide });
+				triangle = new THREE.Mesh(geometry2, material2);
+				scene.add(triangle);
+
+				camera.position.z = 6;
+				stats = new Stats();
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.top = '0px';
+				document.body.appendChild( stats.domElement );
+			}
+			function Update() {
+				requestAnimationFrame(Update);
+				stats.update();
+				renderer.render(scene, camera);
+			}
+			Start();
+			Update();
+		</script>
+	</body>
+</html>
